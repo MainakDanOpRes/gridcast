@@ -1,0 +1,30 @@
+[project]
+name = "gridcast"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Mainak Dan", email = "mainak.dan@grenoble-inp.fr" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "omegalpes>=1.0.0",
+    "pandas>=3.0.6",
+    "pyarrow>=25.0.1",
+    "pydantic>=2.13.5",
+]
+
+[project.scripts]
+gridcast = "gridcast:main"
+
+[build-system]
+requires = ["uv_build>=0.10.11,<0.11.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "pre-commit>=4.6.2",
+    "pytest>=9.1.1",
+    "ruff>=0.16.10",
+]
