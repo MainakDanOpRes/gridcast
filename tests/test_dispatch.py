@@ -43,9 +43,7 @@ def test_battery_is_actually_used():
 
 
 def test_pv_is_curtailed_when_it_cannot_be_used():
-    inp = make_input(
-        pv_peak_kw=8, grid_export_max_kw=0, load_kw=0.5, battery={"capacity_kwh": 2.0}
-    )
+    inp = make_input(pv_peak_kw=8, grid_export_max_kw=0, load_kw=0.5, battery={"capacity_kwh": 2.0})
     res = solved(inp)
     assert sum(res.pv_used_kw) < sum(inp.pv_kw) - 1.0  # some PV was curtailed
     assert_invariants(inp, res)
@@ -73,7 +71,9 @@ def test_battery_never_makes_things_worse():
     """Metamorphic test: a real battery must cost <= a near-useless one."""
     big = solved(make_input()).objective_eur
     tiny = solved(
-        make_input(battery={"capacity_kwh": 0.01, "p_charge_max_kw": 0.01, "p_discharge_max_kw": 0.01})
+        make_input(
+            battery={"capacity_kwh": 0.01, "p_charge_max_kw": 0.01, "p_discharge_max_kw": 0.01}
+        )
     ).objective_eur
     assert big <= tiny + 1e-6
 
