@@ -28,27 +28,27 @@ def make_input(
     **overrides,
 ) -> DispatchInput:
     """Valid 24h PV + battery instance. Override any field by keyword."""
-    batt = dict(
-        capacity_kwh=10.0,
-        p_charge_max_kw=5.0,
-        p_discharge_max_kw=5.0,
-        eff_charge=0.95,
-        eff_discharge=0.95,
-        soc_min=0.1,
-        soc_max=0.9,
-        soc_init=0.5,
-    )
+    batt = {
+        "capacity_kwh": 10.0,
+        "p_charge_max_kw": 5.0,
+        "p_discharge_max_kw": 5.0,
+        "eff_charge": 0.95,
+        "eff_discharge": 0.95,
+        "soc_min": 0.1,
+        "soc_max": 0.9,
+        "soc_init": 0.5,
+    }
     batt.update(battery or {})
 
-    fields = dict(
-        dt_h=1.0,
-        load_kw=[load_kw] * hours,
-        pv_kw=_pv_profile(hours, pv_peak_kw),
-        price_buy=[_buy_price(h % 24) for h in range(hours)],
-        price_sell=[0.05] * hours,
-        grid_import_max_kw=10.0,
-        grid_export_max_kw=5.0,
-        battery=BatteryParams(**batt),
-    )
+    fields = {
+        "dt_h": 1.0,
+        "load_kw": [load_kw] * hours,
+        "pv_kw": _pv_profile(hours, pv_peak_kw),
+        "price_buy": [_buy_price(h % 24) for h in range(hours)],
+        "price_sell": [0.05] * hours,
+        "grid_import_max_kw": 10.0,
+        "grid_export_max_kw": 5.0,
+        "battery": BatteryParams(**batt),
+    }
     fields.update(overrides)
     return DispatchInput(**fields)

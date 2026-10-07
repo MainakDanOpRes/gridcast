@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Self
 
 from pydantic import BaseModel, Field, model_validator
@@ -7,7 +7,7 @@ Finite = Annotated[float, Field(allow_inf_nan=False)]
 NonNegFinite = Annotated[float, Field(ge=0, allow_inf_nan=False)]
 
 
-class SolveStatus(str, Enum):
+class SolveStatus(StrEnum):
     OPTIMAL = "optimal"
     FEASIBLE = "feasible"  # solution found, optimality not proven (time limit)
     INFEASIBLE = "infeasible"
