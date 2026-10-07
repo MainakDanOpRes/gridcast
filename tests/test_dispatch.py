@@ -19,13 +19,13 @@ def solved(inp, **kw):
 # ---- invariants across a spread of scenarios ----
 SCENARIOS = {
     "baseline": {},
-    "no_pv": dict(pv_peak_kw=0),
-    "pv_surplus_no_export": dict(pv_peak_kw=8, grid_export_max_kw=0),
-    "battery_starts_full": dict(battery=dict(soc_init=0.9)),
-    "battery_starts_empty": dict(battery=dict(soc_init=0.1)),
-    "weak_efficiency": dict(battery=dict(eff_charge=0.7, eff_discharge=0.7)),
+    "no_pv": {"pv_peak_kw": 0},
+    "pv_surplus_no_export": {"pv_peak_kw": 8, "grid_export_max_kw": 0},
+    "battery_starts_full": {"battery": {"soc_init": 0.9}},
+    "battery_starts_empty": {"battery": {"soc_init": 0.1}},
+    "weak_efficiency": {"battery": {"eff_charge": 0.7, "eff_discharge": 0.7}},
     # "negative_prices": dict(price_buy=[-0.05] * 12 + [0.3] * 12, price_sell=[-0.1] * 24),
-    "flat_prices": dict(price_buy=[0.2] * 24, price_sell=[0.2] * 24),
+    "flat_prices": {"price_buy": [0.2] * 24, "price_sell": [0.2] * 24},
 }
 
 
@@ -44,7 +44,7 @@ def test_battery_is_actually_used():
 
 def test_pv_is_curtailed_when_it_cannot_be_used():
     inp = make_input(
-        pv_peak_kw=8, grid_export_max_kw=0, load_kw=0.5, battery=dict(capacity_kwh=2.0)
+        pv_peak_kw=8, grid_export_max_kw=0, load_kw=0.5, battery={"capacity_kwh": 2.0}
     )
     res = solved(inp)
     assert sum(res.pv_used_kw) < sum(inp.pv_kw) - 1.0  # some PV was curtailed
@@ -63,7 +63,7 @@ def test_cost_scales_with_dt(dt, hours):
         load_kw=2.0,
         price_buy=[0.2] * hours,
         price_sell=[0.05] * hours,
-        battery=dict(soc_final_min=0.5),
+        battery={"soc_final_min": 0.5},
     )
     res = solved(inp)
     assert res.objective_eur == pytest.approx(9.6, rel=1e-3)
@@ -73,7 +73,7 @@ def test_battery_never_makes_things_worse():
     """Metamorphic test: a real battery must cost <= a near-useless one."""
     big = solved(make_input()).objective_eur
     tiny = solved(
-        make_input(battery=dict(capacity_kwh=0.01, p_charge_max_kw=0.01, p_discharge_max_kw=0.01))
+        make_input(battery={"capacity_kwh": 0.01, "p_charge_max_kw": 0.01, "p_discharge_max_kw": 0.01})
     ).objective_eur
     assert big <= tiny + 1e-6
 
