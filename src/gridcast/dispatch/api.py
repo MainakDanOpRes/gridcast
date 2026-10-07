@@ -1,4 +1,5 @@
 import logging
+
 import pulp
 
 from .models import _extract_status, _series, build_model, solve_model
@@ -8,8 +9,9 @@ log = logging.getLogger(__name__)
 _SUCCESS = {SolveStatus.OPTIMAL, SolveStatus.FEASIBLE}
 
 
-def solve_dispatch(inp: DispatchInput, *, time_limit_s: float = 30.0,
-                   mip_gap: float = 0.01) -> DispatchResult:
+def solve_dispatch(
+    inp: DispatchInput, *, time_limit_s: float = 30.0, mip_gap: float = 0.01
+) -> DispatchResult:
     try:
         model, h = build_model(inp)
         elapsed = solve_model(model, h, time_limit_s=time_limit_s, mip_gap=mip_gap)
@@ -21,9 +23,11 @@ def solve_dispatch(inp: DispatchInput, *, time_limit_s: float = 30.0,
 
         n, cap = inp.horizon, inp.battery.capacity_kwh
         return DispatchResult(
-            status=status, solve_time_s=elapsed, message=codes,
+            status=status,
+            solve_time_s=elapsed,
+            message=codes,
             objective_eur=float(pulp.value(model.objective)),
-            battery_charge_kw=_series(h["batt"].charge.p, n),      # verify names
+            battery_charge_kw=_series(h["batt"].charge.p, n),  # verify names
             battery_discharge_kw=_series(h["batt"].discharge.p, n),
             soc=[e / cap for e in _series(h["batt"].e, n)],
             grid_import_kw=_series(h["grid_in"].p, n),
