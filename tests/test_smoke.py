@@ -1,5 +1,4 @@
 def test_package_imports():
     import gridcast
-    assert gridcast is not None
 
-    
+    assert gridcast is not None

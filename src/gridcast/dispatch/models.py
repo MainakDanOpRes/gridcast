@@ -1,17 +1,17 @@
 import time as _time
 from typing import Any
-import pulp
 
+import pulp
 from omegalpes.energy.energy_nodes import EnergyNode
+from omegalpes.energy.energy_types import elec
 from omegalpes.energy.units.consumption_units import FixedConsumptionUnit, VariableConsumptionUnit
-from omegalpes.energy.units.production_units import FixedProductionUnit, VariableProductionUnit
+from omegalpes.energy.units.production_units import VariableProductionUnit
 from omegalpes.energy.units.storage_units import StorageUnit
 from omegalpes.general.optimisation.model import OptimisationModel
-from omegalpes.general.optimisation.elements import Objective
-from omegalpes.energy.energy_types import elec
 from omegalpes.general.time import TimeUnit
 
 from .schemas import DispatchInput, SolveStatus
+
 
 # --------------------------------------------------------------------------
 # Status adapter: pure function of solver codes, testable without a solver
@@ -29,38 +29,46 @@ def status_from_codes(status: int | None, sol_status: int | None) -> SolveStatus
     if status == pulp.LpStatusNotSolved:
         return SolveStatus.TIMEOUT  # stopped without an incumbent
     return SolveStatus.ERROR  # unbounded, undefined, unknown codes
- 
- 
+
+
 def _extract_status(model: OptimisationModel) -> SolveStatus:
     return status_from_codes(model.status, getattr(model, "sol_status", None))
+
 
 # --------------------------------------------------------------------------
 # Model construction
 # --------------------------------------------------------------------------
 
-def build_model(inp: DispatchInput):
+
+def build_model(inp: DispatchInput) -> tuple[OptimisationModel, dict[str, Any]]:
     b = inp.battery
     t = TimeUnit(periods=inp.horizon, dt=inp.dt_h)
 
     load = FixedConsumptionUnit(time=t, name="load", p=inp.load_kw)
     pv = VariableProductionUnit(time=t, name="pv", p_min=0, p_max=inp.pv_kw)
-    grid_in = VariableProductionUnit(time=t, name="grid_in", 
-                                     p_min=0, p_max=inp.grid_import_max_kw)
-    grid_out = VariableConsumptionUnit(time=t, name="grid_out", 
-                                       p_min=0, p_max=inp.grid_export_max_kw)
+    grid_in = VariableProductionUnit(time=t, name="grid_in", p_min=0, p_max=inp.grid_import_max_kw)
+    grid_out = VariableConsumptionUnit(
+        time=t, name="grid_out", p_min=0, p_max=inp.grid_export_max_kw
+    )
 
-    batt = StorageUnit(time=t, name="battery", 
-                       pc_max=b.p_charge_max_kw, pd_max=b.p_discharge_max_kw,
-                       eff_c=b.eff_charge, eff_d=b.eff_discharge,
-                       soc_min=b.soc_min, soc_max=b.soc_max,
-                       e_0=b.soc_init*b.capacity_kwh,
-                       capacity=b.capacity_kwh,
-                       e_f=None if b.soc_final_min is None else b.soc_final_min*b.capacity_kwh)
+    batt = StorageUnit(
+        time=t,
+        name="battery",
+        pc_max=b.p_charge_max_kw,
+        pd_max=b.p_discharge_max_kw,
+        eff_c=b.eff_charge,
+        eff_d=b.eff_discharge,
+        soc_min=b.soc_min,
+        soc_max=b.soc_max,
+        e_0=b.soc_init * b.capacity_kwh,
+        capacity=b.capacity_kwh,
+        e_f=None if b.soc_final_min is None else b.soc_final_min * b.capacity_kwh,
+    )
 
     grid_in._add_operating_cost(inp.price_buy)
     grid_in.minimize_operating_cost()
     grid_out._add_operating_cost(inp.price_sell)
-    grid_out.minimize_operating_cost(weight = -1)
+    grid_out.minimize_operating_cost(weight=-1)
 
     node = EnergyNode(time=t, name="bus", energy_type=elec)
 
@@ -68,9 +76,7 @@ def build_model(inp: DispatchInput):
 
     model = OptimisationModel(time=t, name="dispatch")
     model.add_nodes(node)
-    return model,  {"pv": pv, "grid_in": grid_in, "grid_out": grid_out, "batt": batt}
-
-    
+    return model, {"pv": pv, "grid_in": grid_in, "grid_out": grid_out, "batt": batt}
 
 
 # --------------------------------------------------------------------------
@@ -78,7 +84,7 @@ def build_model(inp: DispatchInput):
 # --------------------------------------------------------------------------
 def _series(quantity: Any, horizon: int) -> list[float]:
     """Read a solved Quantity as a list of floats (works for list or int-keyed dict).
- 
+
     Only call this AFTER checking the solve status: on a failed solve, quantities
     still hold their initial zeros and would look like a valid schedule.
     """
@@ -86,8 +92,8 @@ def _series(quantity: Any, horizon: int) -> list[float]:
     if any(v is None for v in vals):  # varValue is None if var never entered the LP
         raise ValueError("solved quantity contains None")
     return [float(v) for v in vals]
- 
- 
+
+
 # --------------------------------------------------------------------------
 # Solving
 # --------------------------------------------------------------------------
@@ -99,7 +105,7 @@ def solve_model(
     mip_gap: float,
 ) -> float:
     """Solve with solver-enforced limits. Returns elapsed seconds.
- 
+
     PULP_CBC_CMD is deprecated in PuLP 4 (we pin pulp<4). Migration path:
     `pulp[cbc]` + COIN_CMD, changed here only.
     """

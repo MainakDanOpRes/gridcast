@@ -30,3 +30,37 @@ dev = [
     "pytest>=9.1.1",
     "ruff>=0.16.10",
 ]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle: basic style errors and warnings
+    "F",        # pyflakes: unused imports/variables, undefined names
+    "I",        # isort: import ordering
+    "B",        # bugbear: likely bugs (mutable defaults, bare except patterns)
+    "UP",       # pyupgrade: modern syntax (list[str], X | None)
+    "SIM",      # simplifications
+    "C4",       # comprehension cleanups
+    "RUF",      # ruff-specific checks
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501"]   # long data lines in tests are fine
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src/gridcast"]
+plugins = ["pydantic.mypy"]
+strict = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["omegalpes.*", "lpfics.*", "pulp.*"]
+ignore_missing_imports = true
