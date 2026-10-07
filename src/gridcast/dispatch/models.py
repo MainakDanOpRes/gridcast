@@ -43,7 +43,7 @@ def build_model(inp: DispatchInput):
     t = TimeUnit(periods=inp.horizon, dt=inp.dt_h)
 
     load = FixedConsumptionUnit(time=t, name="load", p=inp.load_kw)
-    pv = FixedProductionUnit(time=t, name="pv", p=inp.pv_kw)
+    pv = VariableProductionUnit(time=t, name="pv", p_min=0, p_max=inp.pv_kw)
     grid_in = VariableProductionUnit(time=t, name="grid_in", 
                                      p_min=0, p_max=inp.grid_import_max_kw)
     grid_out = VariableConsumptionUnit(time=t, name="grid_out", 
